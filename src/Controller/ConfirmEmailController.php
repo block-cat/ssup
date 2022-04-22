@@ -1,0 +1,118 @@
+<?php
+
+/*
+ * This file is part of block-cat/ssup.
+ *
+ * Copyright (c) 2022 block-cat.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace BlockCat\SSUP\Controller;
+
+use Flarum\Http\SessionAccessToken;
+use Flarum\Http\SessionAuthenticator;
+use Flarum\Http\UrlGenerator;
+use Flarum\User\Command\ConfirmEmail;
+use Illuminate\Contracts\Bus\Dispatcher;
+use Illuminate\Support\Arr;
+use Laminas\Diactoros\Response\RedirectResponse;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Server\RequestHandlerInterface;
+
+use Flarum\Settings\SettingsRepositoryInterface;
+use Maicol07\Flarum\Api\Client as ClientRequest;
+use Laminas\Diactoros\Response\TextResponse;
+
+class ConfirmEmailController implements RequestHandlerInterface
+{
+    /**
+     * @var Dispatcher
+     */
+    protected $bus;
+
+    /**
+     * @var UrlGenerator
+     */
+    protected $url;
+
+    /**
+     * @var SessionAuthenticator
+     */
+    protected $authenticator;
+
+    protected $allPortlets = [
+        // 'despre',
+        // 'istoria',
+        // 'cultura',
+        // 'politica',
+        // 'edu',
+        // 'geografia',
+        // 'demografia',
+        // 'economia',
+        // 'cariera',
+        // 'digi',
+        // 'drept',
+        // 'presa',
+        'localhost',
+        'wellness',
+    ];
+
+    /**
+     * @param Dispatcher $bus
+     * @param UrlGenerator $url
+     * @param SessionAuthenticator $authenticator
+     */
+    public function __construct(Dispatcher $bus, UrlGenerator $url, SessionAuthenticator $authenticator)
+    {
+        $this->bus = $bus;
+        $this->url = $url;
+        $this->authenticator = $authenticator;
+    }
+
+    /**
+     * @param Request $request
+     * @return ResponseInterface
+     */
+    public function handle(Request $request): ResponseInterface
+    {
+        // var_dump("In sfarsit lucreaza!");
+        $token = Arr::get($request->getQueryParams(), 'token');
+
+        $user = $this->bus->dispatch(
+            new ConfirmEmail($token)
+        );
+
+        // activate another accounts
+        $this->activatePortletsAccounts($request, $user->username);
+
+        $session = $request->getAttribute('session');
+        $token = SessionAccessToken::generate($user->id);
+        $this->authenticator->logIn($session, $token);
+
+        return new RedirectResponse($this->url->to('forum')->base());
+    }
+
+    protected function activatePortletsAccounts(Request $request, $username) {
+        // var_dump($username);
+
+        // get api token
+        $apiToken = resolve(SettingsRepositoryInterface::class)->get('block-cat.api_token');
+
+        foreach ($this->allPortlets as $portlet) {
+            // pass current portlet
+            if (str_contains($request->getUri()->getHost(), $portlet)) continue;
+
+            $client = new ClientRequest("https://{$portlet}.emoldova.org", ['token' => $apiToken]);
+
+            // get user with current $username
+            $user = $client->users($username)->request();
+            $userId = $user->id;
+
+            $client->setPath("/api/users/{$userId}/activate-email");
+            $client->post()->request();
+        }
+    }
+}
