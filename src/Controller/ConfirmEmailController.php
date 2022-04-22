@@ -22,9 +22,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
 
+// added by BlockCat
 use Flarum\Settings\SettingsRepositoryInterface;
 use Maicol07\Flarum\Api\Client as ClientRequest;
-use Laminas\Diactoros\Response\TextResponse;
 
 class ConfirmEmailController implements RequestHandlerInterface
 {
@@ -44,20 +44,20 @@ class ConfirmEmailController implements RequestHandlerInterface
     protected $authenticator;
 
     protected $allPortlets = [
-        // 'despre',
-        // 'istoria',
-        // 'cultura',
-        // 'politica',
-        // 'edu',
-        // 'geografia',
-        // 'demografia',
-        // 'economia',
-        // 'cariera',
-        // 'digi',
-        // 'drept',
-        // 'presa',
-        //'localhost',
+        'despre',
+        'istoria',
+        'cultura',
+        'politica',
+        'edu',
+        'geografia',
+        'demografia',
+        'economia',
+        'cariera',
+        'digi',
+        'drept',
+        'presa',
         'wellness',
+        // 'localhost',
     ];
 
     /**
@@ -78,7 +78,6 @@ class ConfirmEmailController implements RequestHandlerInterface
      */
     public function handle(Request $request): ResponseInterface
     {
-        // var_dump("In sfarsit lucreaza!");
         $token = Arr::get($request->getQueryParams(), 'token');
 
         $user = $this->bus->dispatch(
@@ -86,6 +85,7 @@ class ConfirmEmailController implements RequestHandlerInterface
         );
 
         // activate another accounts
+        // added by BlockCat
         $this->activatePortletsAccounts($request, $user->username);
 
         $session = $request->getAttribute('session');
@@ -96,13 +96,11 @@ class ConfirmEmailController implements RequestHandlerInterface
     }
 
     protected function activatePortletsAccounts(Request $request, $username) {
-        // var_dump($username);
-
         // get api token
         $apiToken = resolve(SettingsRepositoryInterface::class)->get('block-cat.api_token');
 
         foreach ($this->allPortlets as $portlet) {
-            // pass current portlet
+            // pass registration portlet
             if (str_contains($request->getUri()->getHost(), $portlet)) continue;
 
             $client = new ClientRequest("https://{$portlet}.emoldova.org", ['token' => $apiToken]);
@@ -111,6 +109,7 @@ class ConfirmEmailController implements RequestHandlerInterface
             $user = $client->users($username)->request();
             $userId = $user->id;
 
+            // activate email on another portlets
             $client->setPath("/api/users/{$userId}/activate-email");
             $client->post()->request();
         }

@@ -24,7 +24,6 @@ return [
     (new Extend\Settings())
         -> serializeToForum('block-cat.apiToken', 'block-cat.api_token'),
     (new Extend\ServiceProvider())
-        // ->register(Providers\ChangeRegisterController::class)
         ->register(Providers\ChangeActivationMailer::class),
     (new Extend\Routes("api"))
         ->post(
