@@ -56,7 +56,7 @@ class ConfirmEmailController implements RequestHandlerInterface
         // 'digi',
         // 'drept',
         // 'presa',
-        'localhost',
+        //'localhost',
         'wellness',
     ];
 
