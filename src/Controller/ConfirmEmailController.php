@@ -25,6 +25,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 // added by BlockCat
 use Flarum\Settings\SettingsRepositoryInterface;
 use Maicol07\Flarum\Api\Client as ClientRequest;
+use GuzzleHttp\Client as HttpRequest;
 
 class ConfirmEmailController implements RequestHandlerInterface
 {
@@ -95,6 +96,20 @@ class ConfirmEmailController implements RequestHandlerInterface
         return new RedirectResponse($this->url->to('forum')->base());
     }
 
+    protected function checkEnableExtension($portletName): bool {
+        $client = new HttpRequest();
+        
+        try {
+            $response = $client->get("https://{$portletName}.emoldova.org/api/extensions/block-cat-ssup");
+        } catch (ClientException $th) {
+            return false;
+        }
+
+        $response = json_decode($response->getBody());
+
+        return $response->active;
+    }
+
     protected function activatePortletsAccounts(Request $request, $username) {
         // get api token
         $apiToken = resolve(SettingsRepositoryInterface::class)->get('block-cat.api_token');
@@ -102,6 +117,8 @@ class ConfirmEmailController implements RequestHandlerInterface
         foreach ($this->allPortlets as $portlet) {
             // pass registration portlet
             if (str_contains($request->getUri()->getHost(), $portlet)) continue;
+
+            if (!$this->checkEnableExtension($portlet)) continue;
 
             $client = new ClientRequest("https://{$portlet}.emoldova.org", ['token' => $apiToken]);
 

@@ -33,6 +33,7 @@ use Flarum\User\User;
 use Flarum\User\AccountActivationMailerTrait;
 use Flarum\Http\UrlGenerator;
 use Illuminate\Contracts\Queue\Queue;
+use GuzzleHttp\Client as HttpRequest;
 
 class RegisterController implements RequestHandlerInterface
 {
@@ -156,6 +157,8 @@ class RegisterController implements RequestHandlerInterface
 
         $token = $this->generateToken($user, $user->email);
         $data = $this->getEmailData($user, $token);
+        // ToDo Set all portlets name in 'forum' attribute
+        // $data['forum'] = "toate";
         
         $this->sendConfirmationEmail($user, $data);
     }
@@ -180,7 +183,7 @@ class RegisterController implements RequestHandlerInterface
             
             foreach ($allUsers as $user) {
                 if (strcmp($user->attributes['email'], $email) == 0) {
-                    return new TextResponse('Aceasta adresa de email deja este utilizata!', 412);
+                    return new TextResponse($this->translator->trans('block-cat-ssup.forum.exceptions.email_already_used_message'), 412);
                 }
             }
 
@@ -190,13 +193,27 @@ class RegisterController implements RequestHandlerInterface
                 
                 // if user already exists $data will contained user data and will be return TextResponse
                 // throw new ValidationException(['file' => $this->translator->trans('core.api.invalid_username_message')]);
-                return new TextResponse('Exista deja un utilizator cu asa un username!', 412);
+                return new TextResponse($this->translator->trans('block-cat-ssup.forum.exceptions.username_already_used_message'), 412);
             } catch (ClientException $th) {
                 if ($th->getCode() !== 404) {
                     throw $th;
                 }
             }
         }
+    }
+
+    protected function checkEnableExtension($portletName): bool {
+        $client = new HttpRequest();
+        
+        try {
+            $response = $client->get("https://{$portletName}.emoldova.org/api/extensions/block-cat-ssup");
+        } catch (ClientException $th) {
+            return false;
+        }
+
+        $response = json_decode($response->getBody());
+
+        return $response->active;
     }
 
     protected function registerUserOnPortlets(Request $request, $apiToken) {
@@ -207,6 +224,8 @@ class RegisterController implements RequestHandlerInterface
         foreach ($this->allPortlets as $portlet) {
             // pass registration portlet
             if (str_contains($request->getUri()->getHost(), $portlet)) continue;
+
+            if (!$this->checkEnableExtension($portlet)) continue;
 
             $forum = new Flarum([
                 'url' => "https://{$portlet}.emoldova.org",

@@ -1,0 +1,5 @@
+block-cat-ssup:
+  forum:
+    exceptions:
+      email_already_used_message: "Această adresă de email este deja utilizată!"
+      username_already_used_message: "Selectați un alt nume de utilizator!"

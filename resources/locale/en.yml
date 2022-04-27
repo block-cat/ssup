@@ -1,0 +1,5 @@
+block-cat-ssup:
+  forum:
+    exceptions:
+      email_already_used_message: "This email is already in use!"
+      username_already_used_message: "Select another username!"

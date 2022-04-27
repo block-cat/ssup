@@ -30,6 +30,11 @@ return [
             '/users/{id}/activate-email',
             'users.email.activate',
             Controller\ActivateEmailController::class
+        )
+        ->get(
+            '/extensions/{name}',
+            'extensions.check',
+            Controller\CheckExtensionController::class
         ),
     (new Extend\Routes("forum"))
         ->remove('register')
