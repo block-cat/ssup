@@ -35,6 +35,11 @@ return [
             '/extensions/{name}',
             'extensions.check',
             Controller\CheckExtensionController::class
+        )
+        ->get(
+            '/forum-name',
+            'forum.name',
+            Controller\GetForumNameController::class
         ),
     (new Extend\Routes("forum"))
         ->remove('register')

@@ -135,7 +135,7 @@ class RegisterController implements RequestHandlerInterface
 
             // send email to confirm accounts
             // added by BlockCat
-            $this->sendEmailConfirmation($userId);
+            $this->sendEmailConfirmation($request, $userId);
 
             $token = RememberAccessToken::generate($userId);
 
@@ -148,7 +148,7 @@ class RegisterController implements RequestHandlerInterface
         return $response;
     }
 
-    protected function sendEmailConfirmation($userId) {
+    protected function sendEmailConfirmation(Request $request, $userId) {
         $user = User::query()->find($userId);
 
         if ($user->is_email_confirmed) {
@@ -157,10 +157,40 @@ class RegisterController implements RequestHandlerInterface
 
         $token = $this->generateToken($user, $user->email);
         $data = $this->getEmailData($user, $token);
-        // ToDo Set all portlets name in 'forum' attribute
-        // $data['forum'] = "toate";
+        
+        $data['forum'] = $this->addActivePortletName($request, $data['forum']);
         
         $this->sendConfirmationEmail($user, $data);
+    }
+
+    protected function addActivePortletName(Request $request, $currentPortletName): string {
+        $allPortletsName = "";
+
+        foreach ($this->allPortlets as $portlet) {
+            if (str_contains($request->getUri()->getHost(), $portlet)) {
+                $allPortletsName .= $currentPortletName . ": https://{$portlet}.emoldova.org\n";
+            } else {
+                if ($this->checkEnableExtension($portlet)) {
+                    $allPortletsName .= $this->portletName($portlet) . ": https://{$portlet}.emoldova.org\n";
+                }
+            }
+        }
+
+        return $allPortletsName;
+    }
+
+    protected function portletName($portletName) {
+        $client = new HttpRequest();
+        
+        try {
+            $response = $client->get("https://{$portletName}.emoldova.org/api/forum-name");
+        } catch (ClientException $th) {
+            throw $th;
+        }
+
+        $response = json_decode($response->getBody());
+
+        return $response->forumName;
     }
 
     protected function checkUserExists(Request $request, $apiToken) {

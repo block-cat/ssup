@@ -3,3 +3,16 @@ block-cat-ssup:
     exceptions:
       email_already_used_message: "This email is already in use!"
       username_already_used_message: "Select another username!"
+
+core:
+  email:
+    activate_account:
+      body: |
+        Hey {username}!
+
+        Someone (hopefully you!) has signed with this email address up to following portlets:
+        {forum}
+        If this was you, simply click the following link and your email will be confirmed:
+        {url}
+
+        If this was not you, please ignore this email.

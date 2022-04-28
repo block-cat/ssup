@@ -3,3 +3,16 @@ block-cat-ssup:
     exceptions:
       email_already_used_message: "Această adresă de email este deja utilizată!"
       username_already_used_message: "Selectați un alt nume de utilizator!"
+
+core:
+  email:
+    activate_account:
+      body: |
+        Salut, {username}!
+
+        Această adresă de e-mail a fost utilizată pentru înregistrarea la următoarele portlete:
+        {forum}
+        Dacă ați fost Dvs., accesați următorul link pentru activarea conturilor în portletele menționate:
+        {url}
+
+        Dacă nu ați fost Dvs., vă rugăm să ignorați acest e-mail.
