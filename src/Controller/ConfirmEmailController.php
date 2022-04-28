@@ -26,6 +26,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Maicol07\Flarum\Api\Client as ClientRequest;
 use GuzzleHttp\Client as HttpRequest;
+use GuzzleHttp\Exception\ClientException;
 
 class ConfirmEmailController implements RequestHandlerInterface
 {
